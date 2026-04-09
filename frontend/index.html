@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Condensr - Text Summarizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --ink: #1a1714; --ink2: #3d3a36; --ink3: #7a756e; --ink4: #b5b0aa;
+      --cream: #f5f0e8; --gold: #c17f2a; --gold-l: #e8c47a; --gold-bg: #fff8ec;
+      --white: #ffffff; --border: 1px solid rgba(26, 23, 20, 0.12);
+      --ff-serif: "DM Serif Display", Georgia, serif;
+      --ff-sans: "DM Sans", system-ui, sans-serif;
+      --ff-mono: "IBM Plex Mono", "Courier New", monospace;
+      --r-md: 8px; --r-lg: 12px; --shadow: 0 2px 12px rgba(26, 23, 20, 0.08); --t: 0.18s ease;
+    }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body { font-family: var(--ff-sans); background: var(--cream); color: var(--ink); line-height: 1.65; min-height: 100vh; display: flex; flex-direction: column; }
+    .header { background: var(--ink); border-bottom: 2px solid var(--gold); padding: 1rem 1.5rem; }
+    .header-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 1rem; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--cream); }
+    .logo-ic { font-size: 24px; color: var(--gold); }
+    .logo-tx { font-family: var(--ff-serif); font-size: 24px; color: var(--cream); letter-spacing: 0.02em; }
+    .nav-btn { font-family: var(--ff-mono); font-size: 11px; background: transparent; border: 1px solid transparent; color: var(--ink4); padding: 6px 14px; border-radius: 5px; cursor: pointer; letter-spacing: 0.05em; transition: var(--t); text-transform: lowercase; }
+    .nav-btn:hover { color: var(--cream); border-color: rgba(255, 255, 255, 0.2); }
+    .nav-btn.active { color: var(--gold); border-color: var(--gold); }
+    .hero { text-align: center; padding: 3.5rem 1.5rem 2rem; max-width: 680px; margin: 0 auto; }
+    .hero-h1 { font-family: var(--ff-serif); font-size: clamp(32px, 5vw, 52px); line-height: 1.15; color: var(--ink); margin-bottom: 1rem; }
+    .hero-h1 em { color: var(--gold); font-style: italic; }
+    .hero-sub { font-size: 15px; color: var(--ink3); line-height: 1.7; max-width: 480px; margin: 0 auto; }
+    textarea { width: 100%; border: var(--border); border-radius: var(--r-md); padding: 10px 12px; font-family: var(--ff-sans); font-size: 13px; color: var(--ink); background: var(--cream); outline: none; transition: border-color var(--t); resize: vertical; line-height: 1.6; }
+    textarea:focus { border-color: var(--gold); background: var(--white); }
+    .btn { width: 100%; padding: 14px; background: var(--ink); color: var(--gold-l); border: 2px solid var(--ink); border-radius: var(--r-md); font-family: var(--ff-serif); font-size: 17px; font-style: italic; cursor: pointer; transition: var(--t); display: flex; align-items: center; justify-content: center; gap: 10px; letter-spacing: 0.02em; }
+    .btn:hover:not(:disabled) { background: transparent; color: var(--ink); border-color: var(--gold); }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .footer { background: var(--ink); border-top: 1px solid rgba(255, 255, 255, 0.08); padding: 2rem 1.5rem; text-align: center; color: var(--ink3); font-family: var(--ff-mono); font-size: 11px; margin-top: auto; }
+    .main { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem 4rem; display: grid; grid-template-columns: 440px 1fr; gap: 1.75rem; align-items: start; }
+    @media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
+    .panel { background: var(--white); border: var(--border); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 1rem; }
+    .panel:last-child { margin-bottom: 0; }
+    .itabs { display: flex; border-bottom: var(--border); }
+    .itab { flex: 1; padding: 11px 8px; background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: var(--ff-mono); font-size: 11px; color: var(--ink3); letter-spacing: 0.04em; transition: var(--t); }
+    .itab:hover { color: var(--ink); background: var(--cream); }
+    .itab.on { color: var(--ink); border-bottom-color: var(--gold); background: #ede8df; }
+    .ibody { padding: 1rem; }
+    .url-inp { width: 100%; border: var(--border); border-radius: var(--r-md); padding: 10px 12px; font-family: var(--ff-mono); font-size: 12px; color: var(--ink); background: var(--cream); outline: none; resize: none; line-height: 1.6; transition: border-color var(--t); }
+    .url-inp:focus { border-color: var(--gold); background: var(--white); }
+    .hint { font-size: 11px; color: var(--ink3); margin-top: 7px; line-height: 1.5; }
+    .drop { border: 2px dashed #e2dbd0; border-radius: var(--r-md); min-height: 130px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: var(--t); }
+    .drop:hover, .drop.over { border-color: var(--gold); background: var(--cream); }
+    .drop-inner { text-align: center; padding: 1.5rem; }
+    .drop-ic { font-size: 30px; color: var(--ink3); margin-bottom: 7px; }
+    .drop-lbl { font-size: 13px; color: var(--ink2); font-weight: 500; }
+    .drop-sub { font-size: 11px; color: var(--ink3); margin-top: 3px; font-family: var(--ff-mono); }
+    .file-info { display: flex; align-items: center; gap: 12px; padding: 0.75rem 1rem; }
+    .fi-name { font-size: 13px; font-weight: 500; color: var(--ink2); }
+    .fi-size { font-size: 11px; color: var(--ink3); font-family: var(--ff-mono); }
+    .rm-btn { margin-left: auto; background: none; border: var(--border); color: var(--ink3); width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; transition: var(--t); flex-shrink: 0; }
+    .rm-btn:hover { background: #c0392b; color: #fff; border-color: #c0392b; }
+    .cpanel { padding: 1.2rem; }
+    .clabel { display: block; font-family: var(--ff-mono); font-size: 10px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 7px; }
+    .clabel .cv { color: var(--gold); text-transform: capitalize; }
+    .csec { margin-bottom: 1.15rem; }
+    .csec:last-child { margin-bottom: 0; }
+    .mgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+    .mbtn { display: flex; flex-direction: column; align-items: flex-start; padding: 8px 9px; background: var(--cream); border: var(--border); border-radius: var(--r-md); cursor: pointer; transition: var(--t); text-align: left; }
+    .mbtn:hover { border-color: var(--ink3); background: #ede8df; }
+    .mbtn.on { border-color: var(--gold); background: var(--gold-bg); }
+    .m-lbl { font-family: var(--ff-mono); font-size: 10px; font-weight: 500; color: var(--ink2); }
+    .m-dsc { font-size: 9px; color: var(--ink3); margin-top: 1px; line-height: 1.3; }
+    .mbtn.on .m-lbl { color: var(--gold); }
+    .crow { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-bottom: 1.15rem; }
+    .half { margin-bottom: 0; }
+    input[type="range"] { width: 100%; accent-color: var(--gold); cursor: pointer; height: 4px; border-radius: 2px; }
+    .slbls { display: flex; justify-content: space-between; margin-top: 4px; }
+    .slbls span { font-family: var(--ff-mono); font-size: 9px; color: var(--ink3); text-transform: capitalize; }
+    .slbls span.on { color: var(--gold); }
+    .tgrp { display: flex; border: var(--border); border-radius: var(--r-md); overflow: hidden; }
+    .tbtn { flex: 1; padding: 8px 5px; background: var(--cream); border: none; font-family: var(--ff-mono); font-size: 10px; color: var(--ink3); cursor: pointer; transition: var(--t); text-transform: capitalize; }
+    .tbtn + .tbtn { border-left: var(--border); }
+    .tbtn:hover { background: #ede8df; color: var(--ink); }
+    .tbtn.on { background: var(--ink); color: var(--cream); }
+    select { width: 100%; border: var(--border); border-radius: var(--r-md); padding: 8px 10px; font-family: var(--ff-mono); font-size: 11px; color: var(--ink); background: var(--cream); outline: none; cursor: pointer; transition: border-color var(--t); }
+    select:focus { border-color: var(--gold); }
+    .out-wrap { position: sticky; top: 74px; }
+    .out-ph { background: var(--white); border: var(--border); border-radius: var(--r-lg); min-height: 280px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--ink3); text-align: center; padding: 2.5rem; box-shadow: var(--shadow); }
+    .ph-ic { font-size: 40px; color: #e2dbd0; }
+    .out-ph p { font-family: var(--ff-serif); font-style: italic; font-size: 16px; color: var(--ink3); }
+    .out-ph span { font-size: 11px; font-family: var(--ff-mono); color: var(--ink3); }
+    .out-card { background: var(--white); border: var(--border); border-radius: var(--r-lg); display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(26, 23, 20, 0.12); animation: fu 0.35s ease; }
+    @keyframes fu { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .stats { display: flex; align-items: center; gap: 1.5rem; padding: 13px 18px; background: var(--cream); border-bottom: var(--border); flex-wrap: wrap; }
+    .st { display: flex; flex-direction: column; gap: 2px; }
+    .st-lbl { font-family: var(--ff-mono); font-size: 9px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.07em; }
+    .st-val { font-family: var(--ff-mono); font-size: 14px; font-weight: 500; color: var(--ink); }
+    .st-val.hl { color: var(--gold); font-size: 16px; }
+    .st-arr { color: var(--ink3); font-size: 16px; }
+    #output { padding: 1.5rem; font-size: 15px; line-height: 1.85; color: var(--ink); overflow-wrap: break-word; font-weight: 300; border-bottom: var(--border); flex: 1; overflow-y: auto; max-height: 600px; background: #f5f5f5; border-radius: 10px; margin: 0; }
+    #output h3 { margin-bottom: 10px; font-family: var(--ff-serif); font-size: 22px; font-style: italic; color: var(--ink); }
+    #output ul { padding-left: 20px; }
+    #output li { margin-bottom: 5px; }
+    #output .summary.professional { font-family: Arial, sans-serif; line-height: 1.6; color: var(--ink); }
+    #output .summary.casual { font-family: sans-serif; line-height: 1.6; color: #444; }
+    button { margin: 10px 0; padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; }
+    .acts { display: flex; gap: 8px; padding: 12px 1.5rem; flex-wrap: wrap; }
+    .abtn { padding: 7px 16px; background: var(--cream); border: var(--border); border-radius: 5px; font-family: var(--ff-mono); font-size: 10px; color: var(--ink2); cursor: pointer; transition: var(--t); letter-spacing: 0.04em; }
+    .abtn:hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+    .history-view { max-width: 760px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+    .hist-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .hist-title { font-family: var(--ff-serif); font-size: 28px; }
+    .clear-btn { font-family: var(--ff-mono); font-size: 10px; padding: 6px 14px; border: var(--border); background: none; color: var(--ink3); border-radius: 5px; cursor: pointer; transition: var(--t); letter-spacing: 0.04em; }
+    .clear-btn:hover { border-color: #c0392b; color: #c0392b; }
+    .hist-empty { text-align: center; padding: 4rem 2rem; color: var(--ink3); font-family: var(--ff-serif); font-style: italic; font-size: 17px; }
+    .hist-list { display: flex; flex-direction: column; gap: 8px; }
+    .hcard { background: var(--white); border: var(--border); border-radius: var(--r-md); overflow: hidden; transition: box-shadow var(--t); }
+    .hcard:hover { box-shadow: var(--shadow); }
+    .hcard-hdr { padding: 13px 15px; cursor: pointer; }
+    .hmeta { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; flex-wrap: wrap; }
+    .hbadge { font-family: var(--ff-mono); font-size: 9px; padding: 2px 8px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .bt { background: #e8f4fd; color: #1a6fa8; }
+    .bu { background: #fef3e2; color: #8a5a00; }
+    .bf { background: #eef8ee; color: #2d6a2d; }
+    .bm { background: #ede8df; color: var(--ink3); }
+    .hdate { font-family: var(--ff-mono); font-size: 10px; color: var(--ink3); margin-left: auto; }
+    .hprev { font-size: 13px; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+    .hstats { font-family: var(--ff-mono); font-size: 10px; color: var(--ink3); }
+    .hcard-body { border-top: var(--border); padding: 13px 15px; background: var(--cream); display: none; }
+    .hcard-body.open { display: block; }
+    .hsum { font-size: 13px; line-height: 1.75; white-space: pre-wrap; color: var(--ink); margin-bottom: 10px; }
+    .hdel { font-family: var(--ff-mono); font-size: 10px; padding: 5px 13px; background: none; border: 1px solid #c0392b; color: #c0392b; border-radius: 5px; cursor: pointer; transition: var(--t); }
+    .hdel:hover { background: #c0392b; color: #fff; }
+    @media (max-width: 640px) { .crow { grid-template-columns: 1fr; } .mgrid { grid-template-columns: repeat(2, 1fr); } .main { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-ic">[]</span>
+        <span class="logo-tx">Condensr</span>
+      </div>
+      <nav style="display: flex; gap: 8px; margin-left: auto;">
+        <button class="nav-btn active" onclick="showView('summarize', this)">Summarize</button>
+        <button class="nav-btn" onclick="showView('history', this)">History</button>
+      </nav>
+    </div>
+  </header>
+
+  <div id="view-summarize">
+    <section class="hero">
+      <h1 class="hero-h1">Summarize text<br>into <em>clarity</em></h1>
+      <p class="hero-sub">Quickly condense articles, documents, and text.</p>
+    </section>
+
+    <main class="main">
+      <div>
+        <div class="panel">
+          <div class="itabs">
+            <button class="itab on" onclick="switchTab('text', this)">Text</button>
+            <button class="itab" onclick="switchTab('url', this)">URL</button>
+            <button class="itab" onclick="switchTab('file', this)">File</button>
+          </div>
+          <div class="ibody">
+            <div id="tab-text">
+              <textarea id="inputText" rows="9" placeholder="Paste your text here..." oninput="updateCC()"></textarea>
+              <div style="font-family: var(--ff-mono); font-size: 10px; color: var(--ink3); text-align: right; margin-top: 5px;" id="char-ct">0 characters</div>
+            </div>
+
+            <div id="tab-url" style="display: none">
+              <input type="url" class="url-inp" id="input-url" placeholder="https://example.com/article">
+              <p class="hint">Paste a public article URL. If the site blocks access, paste the article text directly instead.</p>
+            </div>
+
+            <div id="tab-file" style="display: none">
+              <div class="drop" id="drop-zone" onclick="document.getElementById('file-input').click()" ondragover="event.preventDefault(); this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event)">
+                <div id="drop-inner">
+                  <div class="drop-inner">
+                    <div class="drop-ic">TXT</div>
+                    <div class="drop-lbl">Drop a file or click to browse</div>
+                    <div class="drop-sub">TXT files only</div>
+                  </div>
+                </div>
+              </div>
+              <input type="file" id="file-input" accept=".txt" style="display: none" onchange="handleFileSelect(this)">
+            </div>
+          </div>
+        </div>
+
+        <div class="panel cpanel">
+          <div class="csec">
+            <label class="clabel">Summary Mode</label>
+            <div class="mgrid">
+              <button class="mbtn on" onclick="setMode('bullet_points', this)"><span class="m-lbl">Bullets</span><span class="m-dsc">5 takeaways</span></button>
+              <button class="mbtn" onclick="setMode('short_paragraph', this)"><span class="m-lbl">Paragraph</span><span class="m-dsc">3-5 sentences</span></button>
+              <button class="mbtn" onclick="setMode('tldr', this)"><span class="m-lbl">TLDR</span><span class="m-dsc">One sentence</span></button>
+            </div>
+          </div>
+
+          <div class="crow">
+            <div class="csec half">
+              <label class="clabel">Length - <span class="cv" id="len-label">medium</span></label>
+              <input type="range" min="0" max="2" step="1" value="1" id="len-slider" oninput="setLength(this.value)">
+              <div class="slbls">
+                <span id="ll0">short</span>
+                <span id="ll1" class="on">medium</span>
+                <span id="ll2">detailed</span>
+              </div>
+            </div>
+            <div class="csec half">
+              <label class="clabel">Tone</label>
+              <div class="tgrp">
+                <button class="tbtn" onclick="setTone('casual', this)">casual</button>
+                <button class="tbtn on" onclick="setTone('professional', this)">professional</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="csec">
+            <label class="clabel">Output Language</label>
+            <select id="lang-select">
+              <option value="english">English</option>
+              <option value="hindi">Hindi</option>
+              <option value="kannada">Kannada</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn" id="gen-btn" onclick="summarizeText()">Summarize</button>
+        <div id="err-box" style="background: #fdf3f2; border: 1px solid #f5c6c2; border-radius: var(--r-md); padding: 10px 13px; font-size: 12px; color: #c0392b; font-family: var(--ff-mono); line-height: 1.5; margin-top: 9px; display: none;"></div>
+      </div>
+
+      <div class="out-wrap">
+        <div id="out-placeholder" class="out-ph" style="display: flex">
+          <div class="ph-ic">[]</div>
+          <p>Your summary will appear here</p>
+          <span>Select options and hit Summarize</span>
+        </div>
+        <div id="out-card" class="out-card" style="display: none">
+          <div class="stats">
+            <div class="st"><span class="st-lbl">Original</span><span class="st-val" id="s-orig">-</span></div>
+            <span class="st-arr">-&gt;</span>
+            <div class="st"><span class="st-lbl">Summary</span><span class="st-val" id="s-sum">-</span></div>
+            <div class="st"><span class="st-lbl">Reduction</span><span class="st-val hl" id="s-pct">-</span></div>
+          </div>
+          <div id="output"></div>
+          <div class="acts">
+            <button class="abtn" onclick="exportTxt()">Export .txt</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="view-history" style="display: none">
+    <section class="hero" style="padding-bottom: 1.5rem">
+      <h1 class="hero-h1" style="font-size: clamp(24px, 4vw, 40px)">Summary History</h1>
+      <p class="hero-sub">Your recent summaries.</p>
+    </section>
+    <div class="history-view">
+      <div class="hist-hdr">
+        <h2 class="hist-title" id="hist-count"></h2>
+        <button class="clear-btn" onclick="clearHistory()">Clear All</button>
+      </div>
+      <div id="hist-empty" class="hist-empty" style="display: none">No summaries yet.</div>
+      <div class="hist-list" id="hist-list"></div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>Condensr - Fast text summarization</p>
+  </footer>
+
+  <script>
+    const S = { inputType: "text", mode: "bullet_points", length: "medium", formality: "professional", file: null };
+    const LENGTHS = ["short", "medium", "detailed"];
+    const MODE_LABELS = { bullet_points: "Bullets", short_paragraph: "Paragraph", tldr: "TLDR" };
+
+    function showView(view, btn) {
+      document.getElementById("view-summarize").style.display = view === "summarize" ? "block" : "none";
+      document.getElementById("view-history").style.display = view === "history" ? "block" : "none";
+      document.querySelectorAll(".nav-btn").forEach((button) => button.classList.remove("active"));
+      if (btn) btn.classList.add("active");
+      if (view === "history") renderHistory();
+    }
+
+    function switchTab(tab, btn) {
+      S.inputType = tab;
+      hideErr();
+      document.querySelectorAll(".itab").forEach((button) => button.classList.remove("on"));
+      btn.classList.add("on");
+      ["text", "url", "file"].forEach((id) => {
+        document.getElementById("tab-" + id).style.display = id === tab ? "block" : "none";
+      });
+    }
+
+    function updateCC() {
+      const len = document.getElementById("inputText").value.length;
+      document.getElementById("char-ct").textContent = len.toLocaleString() + " characters";
+    }
+
+    function setMode(mode, btn) {
+      S.mode = mode;
+      document.querySelectorAll(".mbtn").forEach((button) => button.classList.remove("on"));
+      btn.classList.add("on");
+    }
+
+    function setLength(value) {
+      S.length = LENGTHS[value];
+      document.getElementById("len-label").textContent = LENGTHS[value];
+      LENGTHS.forEach((_, index) => {
+        document.getElementById("ll" + index).className = index == value ? "on" : "";
+      });
+    }
+
+    function setTone(tone, btn) {
+      S.formality = tone;
+      document.querySelectorAll(".tbtn").forEach((button) => button.classList.remove("on"));
+      btn.classList.add("on");
+    }
+
+    function handleFileSelect(input) {
+      const file = input.files[0];
+      if (file) setFile(file);
+    }
+
+    function handleDrop(event) {
+      event.preventDefault();
+      document.getElementById("drop-zone").classList.remove("over");
+      const file = event.dataTransfer.files[0];
+      if (file) setFile(file);
+    }
+
+    function setFile(file) {
+      if (!file.name.toLowerCase().endsWith(".txt")) {
+        showErr("Only .txt files are supported.");
+        return;
+      }
+      hideErr();
+      S.file = file;
+      document.getElementById("drop-inner").innerHTML = `
+        <div class="file-info">
+          <span style="font-size: 24px;">TXT</span>
+          <div>
+            <div class="fi-name">${escapeHtml(file.name)}</div>
+            <div class="fi-size">${(file.size / 1024).toFixed(1)} KB</div>
+          </div>
+          <button class="rm-btn" onclick="event.stopPropagation(); clearFile()">X</button>
+        </div>`;
+    }
+
+    function clearFile() {
+      S.file = null;
+      document.getElementById("file-input").value = "";
+      document.getElementById("drop-inner").innerHTML = `
+        <div class="drop-inner">
+          <div class="drop-ic">TXT</div>
+          <div class="drop-lbl">Drop a file or click to browse</div>
+          <div class="drop-sub">TXT files only</div>
+        </div>`;
+    }
+
+    function showErr(message) {
+      const box = document.getElementById("err-box");
+      box.textContent = message;
+      box.style.display = "block";
+    }
+
+    function hideErr() {
+      document.getElementById("err-box").style.display = "none";
+    }
+
+    function wc(text) {
+      const normalizedText = String(text || "").trim();
+      if (!normalizedText) return 0;
+      return normalizedText.split(/\s+/).length;
+    }
+
+    async function summarizeText() {
+      hideErr();
+      const button = document.getElementById("gen-btn");
+      const originalLabel = button.textContent;
+      button.disabled = true;
+      button.textContent = "Summarizing...";
+
+      try {
+        const text = await resolveInputText();
+        const language = document.getElementById("lang-select").value;
+        const response = await fetch("http://localhost:5000/summarize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, tone: S.formality, language, mode: S.mode, length: S.length })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Unable to summarize text.");
+
+        renderSummary(data, text);
+        saveToHistory({
+          inputType: S.inputType,
+          mode: S.mode,
+          language,
+          date: new Date().toISOString(),
+          preview: text.slice(0, 140),
+          summary: data.summaryText,
+          wordOrig: data.originalWordCount,
+          wordSum: data.summaryWordCount
+        });
+      } catch (error) {
+        showErr(error.message || "Something went wrong.");
+      } finally {
+        button.disabled = false;
+        button.textContent = originalLabel;
+      }
+    }
+
+    async function resolveInputText() {
+      if (S.inputType === "text") {
+        const text = document.getElementById("inputText").value.trim();
+        if (!text) throw new Error("Please enter some text.");
+        return text;
+      }
+
+      if (S.inputType === "url") {
+        const url = document.getElementById("input-url").value.trim();
+        if (!url) throw new Error("Please enter a URL.");
+
+        const response = await fetch("http://localhost:5000/extract-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url, language: document.getElementById("lang-select").value })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Unable to read the URL.");
+        return data.text;
+      }
+
+      if (!S.file) throw new Error("Please choose a .txt file.");
+      return readFileText(S.file);
+    }
+
+    function readFileText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || "").trim());
+        reader.onerror = () => reject(new Error("Unable to read the selected file."));
+        reader.readAsText(file);
+      });
+    }
+
+    function renderSummary(data, sourceText) {
+      const renderedText = document.getElementById("output");
+      const outputText = data.summaryText || stripHtml(data.summary || "");
+      const originalWords = data.originalWordCount ?? wc(sourceText);
+      const summaryWords = data.summaryWordCount ?? wc(outputText);
+      const reduction = originalWords ? Math.max(0, Math.round(((originalWords - summaryWords) / originalWords) * 100)) : 0;
+
+      document.getElementById("out-placeholder").style.display = "none";
+      document.getElementById("out-card").style.display = "block";
+      renderedText.innerHTML = data.summary;
+      document.getElementById("s-orig").textContent = `${originalWords} words`;
+      document.getElementById("s-sum").textContent = `${summaryWords} words`;
+      document.getElementById("s-pct").textContent = `${reduction}%`;
+    }
+
+    function exportTxt() {
+      const text = document.getElementById("output").textContent.trim();
+      if (!text) return;
+      const link = document.createElement("a");
+      const href = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
+      link.href = href;
+      link.download = "summary.txt";
+      link.click();
+      URL.revokeObjectURL(href);
+    }
+
+    function getHistory() {
+      try {
+        return JSON.parse(localStorage.getItem("condensr_history") || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveToHistory(entry) {
+      const history = getHistory();
+      history.unshift(entry);
+      if (history.length > 20) history.length = 20;
+      localStorage.setItem("condensr_history", JSON.stringify(history));
+    }
+
+    function clearHistory() {
+      if (!confirm("Delete all history?")) return;
+      localStorage.removeItem("condensr_history");
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const history = getHistory();
+      const list = document.getElementById("hist-list");
+      const empty = document.getElementById("hist-empty");
+      const count = document.getElementById("hist-count");
+      count.textContent = history.length ? `${history.length} summar${history.length === 1 ? "y" : "ies"}` : "History";
+
+      if (!history.length) {
+        empty.style.display = "block";
+        list.innerHTML = "";
+        return;
+      }
+
+      empty.style.display = "none";
+      const typeClass = { text: "bt", url: "bu", file: "bf" };
+      list.innerHTML = history.map((item, index) => `
+        <div class="hcard">
+          <div class="hcard-hdr" onclick="toggleHist(${index})">
+            <div class="hmeta">
+              <span class="hbadge ${typeClass[item.inputType] || "bt"}">${escapeHtml(item.inputType)}</span>
+              <span class="hbadge bm">${escapeHtml(MODE_LABELS[item.mode] || item.mode || "")}</span>
+              <span class="hbadge bm">${escapeHtml(item.language || "english")}</span>
+              <span class="hdate">${new Date(item.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+            </div>
+            <div class="hprev">${escapeHtml(item.preview || "-")}</div>
+            <div class="hstats">${Number(item.wordOrig || 0).toLocaleString()} -&gt; ${Number(item.wordSum || 0).toLocaleString()} words</div>
+          </div>
+          <div class="hcard-body" id="hb-${index}">
+            <div class="hsum">${escapeHtml(item.summary || "")}</div>
+            <button class="hdel" onclick="deleteHist(${index})">Delete</button>
+          </div>
+        </div>`).join("");
+    }
+
+    function toggleHist(index) {
+      document.getElementById("hb-" + index).classList.toggle("open");
+    }
+
+    function deleteHist(index) {
+      const history = getHistory();
+      history.splice(index, 1);
+      localStorage.setItem("condensr_history", JSON.stringify(history));
+      renderHistory();
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function stripHtml(value) {
+      const temp = document.createElement("div");
+      temp.innerHTML = value;
+      return temp.textContent || temp.innerText || "";
+    }
+  </script>
+</body>
+</html>
